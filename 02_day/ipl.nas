@@ -1,4 +1,4 @@
-; hello-os						; Powered by uniartisan 2019.9.05
+; hello-os						; Powered by uniartisan 2019.9.25
 ; TAB=4
 
 		ORG		0x7c00			; 指明程序装载地址

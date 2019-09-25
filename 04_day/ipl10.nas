@@ -1,3 +1,4 @@
+; Powered by uniartisan 2019.9.25
 ; haribote-ipl
 ; TAB=4
 
@@ -28,12 +29,20 @@ CYLS	EQU		10				; 声明CYLS=10
 		DB		"FAT12   "		; 磁盘格式名称（必??8字?，不足填空格）
 		RESB	18				; 先空出18字节
 
-; 程序主体
+;程序主体
+;AX——累加寄存器
+;CX——计数寄存器
+;DX——数据寄存器
+;BX——基址寄存器
+;SP——栈指针寄存器
+;BP——集址指针寄存器
+;SI——源变址寄存器
+;DI——目的变址寄存器
 
 entry:
 		MOV		AX,0			; 初始化寄存器
 		MOV		SS,AX
-		MOV		SP,0x7c00
+		MOV		SP,0x7c00 ;“赋值” 而不是 “移动”
 		MOV		DS,AX
 
 ; 读取磁盘
@@ -48,10 +57,10 @@ readloop:
 		MOV		SI,0			; 记录失败次数寄存器
 
 retry:
-		MOV		AH,0x02			; AH=0x02 : 读入磁盘
+		MOV		AH,0x02		; AH=0x02 : 读入磁盘
 		MOV		AL,1			; 1个扇区
 		MOV		BX,0
-		MOV		DL,0x00			; A驱动器
+		MOV		DL,0x00		; A驱动器
 		INT		0x13			; 调用磁盘BIOS
 		JNC		next			; 没出错则跳转到fin
 		ADD		SI,1			; 往SI加1
@@ -61,13 +70,14 @@ retry:
 		MOV		DL,0x00			; A驱动器
 		INT		0x13			; 重置驱动器
 		JMP		retry
+
 next:
 		MOV		AX,ES			; 把内存地址后移0x200（512/16十六进制转换）
 		ADD		AX,0x0020
 		MOV		ES,AX			; ADD ES,0x020因为没有ADD ES，只能通过AX进行
 		ADD		CL,1			; 往CL里面加1
 		CMP		CL,18			; 比较CL与18
-		JBE		readloop		; CL <= 18 跳转到readloop
+		JBE		readloop	; CL <= 18 跳转到readloop
 		MOV		CL,1
 		ADD		DH,1
 		CMP		DH,2
@@ -78,30 +88,32 @@ next:
 		JB		readloop		; CH < CYLS 跳转到readloop
 
 ; 读取完毕，跳转到haribote.sys执行！
-		MOV		[0x0ff0],CH		; IPLがどこまで読んだのかをメモ
+		MOV		[0x0ff0],CH		
 		JMP		0xc200
 
 error:
 		MOV		SI,msg
 
+
 putloop:
 		MOV		AL,[SI]
 		ADD		SI,1			; 给SI加1
 		CMP		AL,0
-		JE		fin
+		JE		fin				;if(AL == 0) { goto fin; }
 		MOV		AH,0x0e			; 显示一个文字
 		MOV		BX,15			; 指定字符颜色
 		INT		0x10			; 调用显卡BIOS
 		JMP		putloop
-
 fin:
 		HLT						; 让CPU停止，等待指令
 		JMP		fin				; 无限循环
 
 msg:
 		DB		0x0a, 0x0a		; 换行两次
-		DB		"load error"
+		DB		"load error -1"
 		DB		0x0a			; 换行
+		DB		"Powered by uniartisan"
+		DB		0x0a
 		DB		0
 
 		RESB	0x7dfe-$		; 填写0x00直到0x001fe
