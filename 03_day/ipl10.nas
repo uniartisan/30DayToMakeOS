@@ -41,9 +41,57 @@ entry:
 		MOV		SS,AX
 		MOV		SP,0x7c00 ;“赋值” 而不是 “移动”
 		MOV		DS,AX
-		MOV		ES,AX
 
+; 读取磁盘
+
+		MOV		AX,0x0820
+		MOV		ES,AX
+		MOV		CH,0			; 柱面0
+		MOV		DH,0			; 磁头0
+		MOV		CL,2			; 扇区2
+
+readloop:
+		MOV		SI,0			; 记录失败次数寄存器
+
+retry:
+		MOV		AH,0x02		; AH=0x02 : 读入磁盘
+		MOV		AL,1			; 1个扇区
+		MOV		BX,0
+		MOV		DL,0x00		; A驱动器
+		INT		0x13			; 调用磁盘BIOS
+		JNC		next			; 没出错则跳转到fin
+		ADD		SI,1			; 往SI加1
+		CMP		SI,5			; 比较SI与5
+		JAE		error			; SI >= 5 跳转到error
+		MOV		AH,0x00
+		MOV		DL,0x00			; A驱动器
+		INT		0x13			; 重置驱动器
+		JMP		retry
+
+next:
+		MOV		AX,ES			; 把内存地址后移0x200（512/16十六进制转换）
+		ADD		AX,0x0020
+		MOV		ES,AX			; ADD ES,0x020因为没有ADD ES，只能通过AX进行
+		ADD		CL,1			; 往CL里面加1
+		CMP		CL,18			; 比较CL与18
+		JBE		readloop	; CL <= 18 跳转到readloop
+		MOV		CL,1
+		ADD		DH,1
+		CMP		DH,2
+		JB		readloop		; DH < 2 跳转到readloop
+		MOV		DH,0
+		ADD		CH,1
+		CMP		CH,CYLS
+		JB		readloop		; CH < CYLS 跳转到readloop
+
+; 读取完毕，跳转到haribote.sys执行！
+		MOV		[0x0ff0],CH		; IPLがどこまで読んだのかをメモ
+		JMP		0xc200
+
+error:
 		MOV		SI,msg
+
+
 putloop:
 		MOV		AL,[SI]
 		ADD		SI,1			; 给SI加1
@@ -59,7 +107,7 @@ fin:
 
 msg:
 		DB		0x0a, 0x0a		; 换行两次
-		DB		"hello, world!"
+		DB		"load error -1"
 		DB		0x0a			; 换行
 		DB		"Powered by uniartisan"
 		DB		0x0a
