@@ -1,24 +1,13 @@
 #include <stdio.h>										//引入sprintf函数
 #include "bootpack.h"
 
-extern struct FIFO8 keyfifo, mousefifo;
-
-struct MOUSE_DEC {
-	unsigned char buf[3], phase;
-	int x, y, btn;
-};
-
-void enable_mouse(struct MOUSE_DEC *mdec);
-int mouse_decode(struct MOUSE_DEC *mdec, unsigned char dat);
-void init_keyboard(void);
-
 void HariMain(void)
 {
 	struct BOOTINFO* binfo = (struct BOOTINFO*) 0x0ff0;
 	char s[40], mcursor[256], keybuf[32], mousebuf[128];
 	int mx, my, i;
 	struct MOUSE_DEC mdec;
-
+	/*组件剥离*/
 	init_gdtidt();
 	init_pic();
 	io_sti();	//CPU接受外界中断
@@ -30,6 +19,8 @@ void HariMain(void)
 	io_out8(PIC1_IMR, 0xef); /* 开放鼠标中断(11101111) */
 
 	init_keyboard();
+	enable_mouse(&mdec);
+
 
 	init_palette();												/* 设定调色板 */
 	init_screen(binfo->vram, binfo->scrnx, binfo->scrny);		//定义桌面背景
@@ -38,15 +29,13 @@ void HariMain(void)
 	init_mouse_cursor8(mcursor, COL8_008484);
 	putblock8_8(binfo->vram, binfo->scrnx, 16, 16, mx, my, mcursor, 16);
 	sprintf(s, "(%d, %d)", mx, my);
-	putfonts8_asc(binfo->vram, binfo->scrnx, 0, 0, COL8_FFFFFF, s);		//函数值调试输出 
+	putfonts8_asc(binfo->vram, binfo->scrnx, 0, 0, COL8_FFFFFF, s);		//函数值调试输出
 	putfonts8_asc(binfo->vram, binfo->scrnx, 31, 31, COL8_000000, "HarmonicOS.");
 	putfonts8_asc(binfo->vram, binfo->scrnx, 30, 30, COL8_FFFFFF, "HarmonicOS.");
 
-	enable_mouse(&mdec);
-
-	for (;;) 
-	{
-		io_hlt();
+	
+	for (;;) {
+		io_cli();
 		if (fifo8_status(&keyfifo) + fifo8_status(&mousefifo) == 0) {
 			io_stihlt();
 		}
@@ -99,89 +88,4 @@ void HariMain(void)
 			}
 		}
 	}
-}
-
-
-#define PORT_KEYDAT				0x0060
-#define PORT_KEYSTA				0x0064
-#define PORT_KEYCMD				0x0064
-#define KEYSTA_SEND_NOTREADY	0x02
-#define KEYCMD_WRITE_MODE		0x60
-#define KBC_MODE				0x47
-
-void wait_KBC_sendready(void)
-{
-	/* 等待键盘控制电路准备完毕 */
-	for (;;) {
-		if ((io_in8(PORT_KEYSTA) & KEYSTA_SEND_NOTREADY) == 0) {
-			break;
-		}
-	}
-	return;
-}
-
-void init_keyboard(void)
-{
-	/* 初始化键盘控制电路 */
-	wait_KBC_sendready();
-	io_out8(PORT_KEYCMD, KEYCMD_WRITE_MODE);
-	wait_KBC_sendready();
-	io_out8(PORT_KEYDAT, KBC_MODE);
-	return;
-}
-
-#define KEYCMD_SENDTO_MOUSE		0xd4
-#define MOUSECMD_ENABLE			0xf4
-
-
-void enable_mouse(struct MOUSE_DEC *mdec) {
-	/* 鼠标有效 */
-	wait_KBC_sendready();
-	io_out8(PORT_KEYCMD, KEYCMD_SENDTO_MOUSE);
-	wait_KBC_sendready();
-	io_out8(PORT_KEYDAT, MOUSECMD_ENABLE);
-	/* 顺利的话，ACK(0xfa)会被送过来 */
-	mdec->phase = 0; /* 等待0xfa的阶段 */
-	return;
-}
-
-int mouse_decode(struct MOUSE_DEC *mdec, unsigned char dat) {
-	if (mdec->phase == 0) {
-		/* 等待鼠标的0xfa的阶段 */
-		if (dat == 0xfa) {
-			mdec->phase = 1;
-		}
-		return 0;
-	}
-	if (mdec->phase == 1) {
-		/* 等待鼠标第一字节的阶段 */
-		mdec->buf[0] = dat;
-		mdec->phase = 2;
-		return 0;
-	}
-	if (mdec->phase == 2) {
-		/* 等待鼠标第二字节的阶段 */
-		mdec->buf[1] = dat;
-		mdec->phase = 3;
-		return 0;
-	}
-	if (mdec->phase == 3) {
-		/* 等待鼠标第二字节的阶段 */
-		mdec->buf[2] = dat;
-		mdec->phase = 1;
-		mdec->btn = mdec->buf[0] & 0x07;
-		mdec->x = mdec->buf[1];
-		mdec->y = mdec->buf[2];
-		if ((mdec->buf[0] & 0x10) != 0) {
-			mdec->x |= 0xffffff00;
-		}
-		if ((mdec->buf[0] & 0x20) != 0) {
-			mdec->y |= 0xffffff00;
-		}
-		/* 鼠标的y方向与画面符号相反 */
-		mdec->y = -mdec->y;
-		return 1;
-	}
-	/* 应该不可能到这里来 */
-	return -1;
 }

@@ -1,67 +1,41 @@
 #include "bootpack.h"
 /*
-	Éè¶¨PIC ¿É±à³ÌÖÐ¶Ï¿ØÖÆÆ÷
-	´ÓPICÍ¨¹ýIRQ-2Á¬½ÓÖ÷PIC
-	IMR ÊÇÖÐ¶ÏÆÁ±Î¼Ä´æÆ÷, ÓÃÀ´ÆÁ±ÎIRQÐÅºÅ
-	ICW 1 ºÍICW 4 ÉùÃ÷ÁËÖ÷°åÅäÏß·½Ê½
-	ICW 3 ÊÇÖ÷´ÓÉè¶¨, ±íÊ¾´¥·¢Æ÷µÄÄÄÒ»Î»Á¬×Å´Ó´¥·¢Æ÷;(Ò»°ãÊÇIRQ2)
-	ICW 2 ¾ö¶¨IRQÒÔÄÄÒ»¸öÖÐ¶ÏºÅÍ¨ÖªCPU, INT 0x0~0x19 ²»ÄÜ±»Ê¹ÓÃ
+	è®¾å®šPIC å¯ç¼–ç¨‹ä¸­æ–­æŽ§åˆ¶å™¨
+	ä»ŽPICé€šè¿‡IRQ-2è¿žæŽ¥ä¸»PIC
+	IMR æ˜¯ä¸­æ–­å±è”½å¯„å­˜å™¨, ç”¨æ¥å±è”½IRQä¿¡å·
+	ICW 1 å’ŒICW 4 å£°æ˜Žäº†ä¸»æ¿é…çº¿æ–¹å¼
+	ICW 3 æ˜¯ä¸»ä»Žè®¾å®š, è¡¨ç¤ºè§¦å‘å™¨çš„å“ªä¸€ä½è¿žç€ä»Žè§¦å‘å™¨;(ä¸€èˆ¬æ˜¯IRQ2)
+	ICW 2 å†³å®šIRQä»¥å“ªä¸€ä¸ªä¸­æ–­å·é€šçŸ¥CPU, INT 0x0~0x19 ä¸èƒ½è¢«ä½¿ç”¨
 */
 
 void init_pic(void)
 {
-	io_out8(PIC0_IMR, 0xff);			/*½ûÖ¹Ö÷PICËùÓÐÖÐ¶Ï*/
-	io_out8(PIC0_IMR, 0xff);			/*½ûÖ¹´ÓPICËùÓÐÖÐ¶Ï*/
+	io_out8(PIC0_IMR, 0xff);			/*ç¦æ­¢ä¸»PICæ‰€æœ‰ä¸­æ–­*/
+	io_out8(PIC0_IMR, 0xff);			/*ç¦æ­¢ä»ŽPICæ‰€æœ‰ä¸­æ–­*/
 
-	io_out8(PIC0_ICW1, 0x11);			/* ±ßÔµ´¥·¢Ä£Ê½£¨edge trigger mode£© */
-	io_out8(PIC0_ICW2, 0x20);			/* IRQ0-7ÓÉINT20-27½ÓÊÕ */
-	io_out8(PIC0_ICW3, 1 << 2);			/* PIC1ÓÉIRQ2ÏàÁ¬ */
-	io_out8(PIC0_ICW4, 0x01);			/* ÎÞ»º³åÇøÄ£Ê½ */
+	io_out8(PIC0_ICW1, 0x11);			/* è¾¹ç¼˜è§¦å‘æ¨¡å¼ï¼ˆedge trigger modeï¼‰ */
+	io_out8(PIC0_ICW2, 0x20);			/* IRQ0-7ç”±INT20-27æŽ¥æ”¶ */
+	io_out8(PIC0_ICW3, 1 << 2);			/* PIC1ç”±IRQ2ç›¸è¿ž */
+	io_out8(PIC0_ICW4, 0x01);			/* æ— ç¼“å†²åŒºæ¨¡å¼ */
 
-	io_out8(PIC1_ICW1, 0x11);			/* ±ßÔµ´¥·¢Ä£Ê½£¨edge trigger mode£© */
-	io_out8(PIC1_ICW2, 0x28);			/* IRQ8-15ÓÉINT28-2f½ÓÊÕ */
-	io_out8(PIC1_ICW3, 2);				/* PIC1ÓÉIRQ2Á¬½Ó */
-	io_out8(PIC1_ICW4, 0x01);			/* ÎÞ»º³åÇøÄ£Ê½ */
+	io_out8(PIC1_ICW1, 0x11);			/* è¾¹ç¼˜è§¦å‘æ¨¡å¼ï¼ˆedge trigger modeï¼‰ */
+	io_out8(PIC1_ICW2, 0x28);			/* IRQ8-15ç”±INT28-2fæŽ¥æ”¶ */
+	io_out8(PIC1_ICW3, 2);				/* PIC1ç”±IRQ2è¿žæŽ¥ */
+	io_out8(PIC1_ICW4, 0x01);			/* æ— ç¼“å†²åŒºæ¨¡å¼ */
 
-	io_out8(PIC0_IMR, 0xfb);			/* 11111011 PIC1ÒÔÍâÈ«²¿½ûÖ¹ */
-	io_out8(PIC1_IMR, 0xff);			/* 11111111 ½ûÖ¹ËùÓÐÖÐ¶Ï*/
+	io_out8(PIC0_IMR, 0xfb);			/* 11111011 PIC1ä»¥å¤–å…¨éƒ¨ç¦æ­¢ */
+	io_out8(PIC1_IMR, 0xff);			/* 11111111 ç¦æ­¢æ‰€æœ‰ä¸­æ–­*/
 
 	return;
 }
 
 #define PORT_KEYDAT		0x0060
 
-struct FIFO8 keyfifo;
-
-void inthandler21(int* esp)
-/* À´×ÔPS/2¼üÅÌµÄÖÐ¶Ï */
-{
-	struct BOOTINFO *binfo = (struct BOOTINFO *) ADR_BOOTINFO;
-	unsigned char data, s[4];
-	io_out8(PIC0_OCW2, 0x61);	/* Í¨ÖªPIC IRQ-01 ÒÑ¾­ÊÜÀíÍê±Ï */
-	data = io_in8(PORT_KEYDAT);
-	fifo8_put(&keyfifo, data);
-	return;
-
-}
-struct FIFO8 mousefifo;
-
-void inthandler2c(int* esp)
-/* À´×ÔPS/2Êó±êµÄÖÐ¶Ï */
-{
-	unsigned char data;
-	io_out8(PIC1_OCW2, 0x64);	/* Í¨ÖªPIC IRQ-12 ÒÑ¾­ÊÜÀíÍê±Ï */
-	io_out8(PIC0_OCW2, 0x62);	/* Í¨ÖªPIC IRQ-02 ÒÑ¾­ÊÜÀíÍê±Ï */
-	data = io_in8(PORT_KEYDAT);
-	fifo8_put(&mousefifo, data);
-	return;
-}
-
 void inthandler27(int* esp)
-/* PIC0ÖÐ¶ÏµÄ²»ÍêÕû²ßÂÔ */
-/* ÀúÊ·ÒÅÁôÎÊÌâ */
+/* PIC0ä¸­æ–­çš„ä¸å®Œæ•´ç­–ç•¥ */
+/* åŽ†å²é—ç•™é—®é¢˜ */
 
 {
-	io_out8(PIC0_OCW2, 0x67); 
+	io_out8(PIC0_OCW2, 0x67);
 	return;
 }
