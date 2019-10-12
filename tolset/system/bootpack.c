@@ -59,7 +59,7 @@ void HariMain(void)
 	putfonts8_asc(buf_back, binfo->scrnx, 0, 0, COL8_FFFFFF, s);
 	sprintf(s, "memory %dMB free : %dMB", memtotal / (1024 * 1024), memman_total(memman) / (1024 * 1024));
 	putfonts8_asc(buf_back, binfo->scrnx, 0, 32, COL8_FFFFFF, s);
-	sprintf(s,"HarnomicOS",80,80);
+	sprintf(s,"HarmonicOS",80,80);
 	putfonts8_asc(buf_back, binfo->scrnx, 80 , 80, COL8_FFFFFF, s);
 	putfonts8_asc(buf_back, binfo->scrnx, 81 , 81, COL8_848484, s);
 	sheet_refresh(sht_back, 0, 0, binfo->scrnx, 100); /* 刷新文字 */
